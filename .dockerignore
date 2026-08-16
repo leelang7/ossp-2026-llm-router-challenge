@@ -29,3 +29,15 @@ container/**
 !container/Dockerfile
 !container/measurement.Dockerfile
 !container/entrypoint.py
+# routerx 제출 라우터
+!src/routerx/
+src/routerx/**
+!src/routerx/__init__.py
+!src/routerx/features.py
+!src/routerx/policy.py
+!src/routerx/router.py
+!src/routerx/cli.py
+!src/routerx/artifact.npz
+!container/Dockerfile.routerx
+!container/entrypoint_routerx.py
+!container/requirements-runtime.txt

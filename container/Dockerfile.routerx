@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright 2026 routerx contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# 런타임 의존성은 NumPy 하나뿐이다(BSD-3-Clause). musl 휠이 없어 Debian slim을
+# 기반으로 쓰고, 설치 도구는 최종 이미지에서 제거한다. 실행 중에는 아무것도
+# 내려받지 않으며 네트워크 없이 동작한다.
+FROM python:3.11-slim-bookworm@sha256:2e32f7d302adc1c37428355c1e646897c0c53f4fd60b6a551245fb90ee129f91
+
+ARG SOURCE_MANIFEST_SHA256=unbound
+LABEL io.sktelecom.ossp.source-manifest-sha256="${SOURCE_MANIFEST_SHA256}"
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/opt/router \
+    PYTHONUNBUFFERED=1 \
+    TMPDIR=/tmp \
+    OPENBLAS_NUM_THREADS=2 \
+    OMP_NUM_THREADS=2
+
+COPY container/requirements-runtime.txt /tmp/requirements-runtime.txt
+RUN python3 -m pip install --no-cache-dir -r /tmp/requirements-runtime.txt \
+    && rm -f /tmp/requirements-runtime.txt \
+    && python3 -m pip uninstall --yes pip setuptools wheel \
+    && find /usr/local/lib/python3.11 -type d -name '__pycache__' -prune -exec rm -rf {} + \
+    && find /usr/local/lib/python3.11 -type d -name tests -prune -exec rm -rf {} +
+
+COPY --chown=65532:65532 src /opt/router/
+COPY --chown=65532:65532 container/entrypoint_routerx.py /opt/router/entrypoint.py
+
+WORKDIR /opt/router
+USER 65532:65532
+
+ENTRYPOINT ["python3", "/opt/router/entrypoint.py"]

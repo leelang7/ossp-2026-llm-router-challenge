@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright 2026 routerx contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# 런타임 의존성. 학습 전용 패키지(scikit-learn, SciPy)는 포함하지 않는다.
+numpy==1.26.4
