@@ -26,7 +26,11 @@ RUN python3 -m pip install --no-cache-dir -r /tmp/requirements-runtime.txt \
 # 두지 않으면 등급 실행마다 표준 라이브러리를 다시 컴파일하며 몇 초를 버린다.
 RUN python3 -m compileall -q /usr/local/lib/python3.11 || true
 
-COPY --chown=65532:65532 src /opt/router/
+# 실행에 필요한 것만 넣는다. 운영자 오케스트레이션 코드(orchestrator, runtime,
+# scoring 등)는 라우터가 쓰지 않으므로 이미지에서 제외한다.
+COPY --chown=65532:65532 src/routerx /opt/router/routerx/
+COPY --chown=65532:65532 src/ossp_router/__init__.py src/ossp_router/protocol.py /opt/router/ossp_router/
+COPY --chown=65532:65532 src/ossp_router/resources /opt/router/ossp_router/resources/
 COPY --chown=65532:65532 container/entrypoint_routerx.py /opt/router/entrypoint.py
 
 WORKDIR /opt/router

@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright 2026 routerx contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# 저장소 무결성 시험(tests/test_repository_policy.py)이 라이선스 원문과 정책
+# JSON의 SHA-256을 검사한다. Windows에서 자동 개행 변환이 일어나면 내용이
+# 같아도 해시가 달라져 시험이 실패한다. 작업 트리에서도 LF를 유지한다.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.zip binary
+*.npz binary

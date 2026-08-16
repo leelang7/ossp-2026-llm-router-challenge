@@ -36,6 +36,7 @@ src/routerx/**
 !src/routerx/features.py
 !src/routerx/policy.py
 !src/routerx/router.py
+!src/routerx/trees.py
 !src/routerx/cli.py
 !src/routerx/artifact.npz
 !container/Dockerfile.routerx

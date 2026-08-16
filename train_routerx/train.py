@@ -167,10 +167,13 @@ def main(argv=None) -> int:
         cost = (np.repeat(in_tok, n_m, axis=1) * rate_in + out_tok * rate_out) / unit
         return np.maximum(cost * scale_vec, 1e-9)
 
-    # 비용 보정(bump·scale)은 배포될 모델과 같은 예측으로 계산한다. OOF 예측으로
-    # 보정해 full-fit 모델에 적용하면 모델마다 다른 편향이 남아 추론 모델 비용이
-    # 계통적으로 싸 보이고, 확보해 둔 예산 마진이 조용히 잠식된다.
-    bump = np.exp(np.quantile(np.log1p(fit_O) - P_fit[:, n_m:2 * n_m],
+    # 비용 보정은 두 조각의 목적이 달라 서로 다른 예측으로 계산한다.
+    #  · bump(잔차 분위수)는 '예측이 처음 보는 자료에서 얼마나 빗나가는가'를
+    #    담아야 하므로 OOF 예측으로 구한다. 학습에 쓴 자료의 잔차로 구하면
+    #    특히 트리 모델에서 잔차가 거의 0이라 비용을 크게 과소평가한다.
+    #  · cost_scale(총액 보정)은 배포될 모델의 총액을 맞추는 것이므로 full-fit
+    #    예측으로 구한다. OOF로 구해 full-fit에 적용하면 모델별로 다른 편향이 남는다.
+    bump = np.exp(np.quantile(np.log1p(fit_O) - P_oof[:, n_m:2 * n_m],
                               args.cost_quantile, axis=0))
     ones = np.ones(n_m)
     cost_scale = fit_C.sum(0) / costs_from(P_fit, bump, ones).sum(0)
