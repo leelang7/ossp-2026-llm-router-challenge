@@ -23,6 +23,7 @@ from pathlib import Path
 
 import numpy as np
 from scipy import sparse
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import Ridge
 
@@ -39,6 +40,7 @@ from ossp_router.protocol import (  # noqa: E402
 from routerx.features import DENSE_NAMES, dense_features, episode_text  # noqa: E402
 from routerx.policy import select_batch  # noqa: E402
 from routerx.router import _tie_key  # noqa: E402
+from routerx.trees import Forest, export_forest  # noqa: E402
 
 SEED = 0
 
@@ -87,7 +89,9 @@ def main(argv=None) -> int:
     ap.add_argument("--dev-outcomes", type=Path, required=True)
     ap.add_argument("--artifact", type=Path, required=True)
     ap.add_argument("--report", type=Path, default=None)
-    ap.add_argument("--alpha", type=float, default=10.0)
+    ap.add_argument("--alpha", type=float, default=5.0)
+    ap.add_argument("--tree-iters", type=int, default=400,
+                    help="토큰 예측 부스팅 트리 반복 수")
     ap.add_argument("--cost-quantile", type=float, default=0.3)
     ap.add_argument("--budget-margin", type=float, default=0.90,
                     help="학습 분할에서 예산의 이 비율까지만 사용하도록 안전계수를 정한다")
@@ -127,12 +131,31 @@ def main(argv=None) -> int:
     X = sparse.hstack([Ww, Wc, sparse.csr_matrix(Dz)]).tocsr()
     print(f"features: word={Ww.shape[1]} char={Wc.shape[1]} dense={Dz.shape[1]} total={X.shape[1]}")
 
-    # 타겟: 모델별 score(3) + 모델별 log 출력 토큰(3) + log 입력 토큰(1).
-    # 입력 토큰은 라우팅 시점에 주어지지 않으므로 학습·추론 모두 예측값을 쓴다.
+    # 품질은 선형 모델이 잘 맞지만 토큰 수는 그렇지 않다(상관 0.14~0.37).
+    # 토큰은 부스팅 트리를 직접 계산 특징에 적합시켜 0.38~0.65까지 올린다.
+    # 라우팅 시점에는 토큰 수가 주어지지 않으므로 학습·추론 모두 예측값을 쓴다.
     n_m = len(MODEL_IDS)
-    Y = np.hstack([fit_S, np.log1p(fit_O), np.log1p(fit_I[:, :1])])
-    model = Ridge(alpha=args.alpha, solver="sparse_cg", random_state=SEED).fit(X, Y)
-    P_oof = oof_ridge(X, Y, args.alpha)
+    model = Ridge(alpha=args.alpha, solver="sparse_cg", random_state=SEED).fit(X, fit_S)
+    S_oof = oof_ridge(X, fit_S, args.alpha)
+
+    tok_target = np.hstack([np.log1p(fit_O), np.log1p(fit_I[:, :1])])
+    tree_params = dict(max_iter=args.tree_iters, learning_rate=0.05, max_leaf_nodes=31,
+                       min_samples_leaf=15, l2_regularization=1.0,
+                       early_stopping=False, random_state=SEED)
+    tok_models = [HistGradientBoostingRegressor(**tree_params).fit(fit_dense, tok_target[:, j])
+                  for j in range(tok_target.shape[1])]
+    forest_arrays = export_forest(tok_models)
+    T_fit = Forest(forest_arrays).predict(fit_dense)
+
+    T_oof = np.empty_like(tok_target)
+    fid = np.arange(fit_dense.shape[0]) % 5
+    for f in range(5):
+        va = fid == f
+        sub = [HistGradientBoostingRegressor(**tree_params).fit(fit_dense[~va], tok_target[~va, j])
+               for j in range(tok_target.shape[1])]
+        T_oof[va] = np.column_stack([m.predict(fit_dense[va]) for m in sub])
+    P_oof = np.hstack([S_oof, T_oof])
+    P_fit = np.hstack([model.predict(X), T_fit])
 
     rate_in = np.array([float(policy.models[m].input_token_rate) for m in MODEL_IDS])
     rate_out = np.array([float(policy.models[m].output_token_rate) for m in MODEL_IDS])
@@ -144,10 +167,9 @@ def main(argv=None) -> int:
         cost = (np.repeat(in_tok, n_m, axis=1) * rate_in + out_tok * rate_out) / unit
         return np.maximum(cost * scale_vec, 1e-9)
 
-    # 비용 보정(bump·scale)은 배포될 계수와 같은 예측으로 계산한다. OOF 예측으로
+    # 비용 보정(bump·scale)은 배포될 모델과 같은 예측으로 계산한다. OOF 예측으로
     # 보정해 full-fit 모델에 적용하면 모델마다 다른 편향이 남아 추론 모델 비용이
     # 계통적으로 싸 보이고, 확보해 둔 예산 마진이 조용히 잠식된다.
-    P_fit = model.predict(X)
     bump = np.exp(np.quantile(np.log1p(fit_O) - P_fit[:, n_m:2 * n_m],
                               args.cost_quantile, axis=0))
     ones = np.ones(n_m)
@@ -204,6 +226,7 @@ def main(argv=None) -> int:
         args.artifact,
         coef=model.coef_.astype(np.float32),
         intercept=model.intercept_.astype(np.float64),
+        **forest_arrays,
         vocab_word=np.array(vocab_w, dtype=object),
         idf_word=tf_w.idf_.astype(np.float32),
         vocab_char=np.array(vocab_c, dtype=object),

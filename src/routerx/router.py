@@ -20,6 +20,7 @@ from .features import (
     word_ngrams,
 )
 from .policy import select_batch
+from .trees import Forest
 
 ARTIFACT_NAME = "artifact.npz"
 
@@ -64,6 +65,13 @@ class Artifact:
         self.dense_coef = np.ascontiguousarray(
             self.coef_t[dense_offset:dense_offset + self.dense_mean.size]
         )
+        # 토큰 수는 부스팅 트리로 예측한다(선형 모델보다 상관이 크게 높다).
+        if "tree_start" not in data.files:
+            raise ValueError(
+                f"{path.name}에 토큰 예측 트리가 없습니다. "
+                "train_routerx/train.py로 다시 학습하십시오."
+            )
+        self.forest = Forest(data)
 
 
 def _tie_key(text: str) -> float:
@@ -81,6 +89,7 @@ def predict(episodes: Sequence, artifact: Artifact):
     n_rows = len(episodes)
     raw = np.tile(artifact.intercept, (n_rows, 1))
     tie_keys = np.empty(n_rows, dtype=np.float64)
+    dense_raw = np.empty((n_rows, artifact.dense_mean.size), dtype=np.float64)
     coef_t = artifact.coef_t
 
     for row, episode in enumerate(episodes):
@@ -101,15 +110,18 @@ def predict(episodes: Sequence, artifact: Artifact):
             columns = np.fromiter(sparse_row.keys(), dtype=np.int64, count=len(sparse_row))
             values = np.fromiter(sparse_row.values(), dtype=np.float64, count=len(sparse_row))
             raw[row] += values @ coef_t[columns]
-        dense = (np.asarray(dense_features(text, episode)) - artifact.dense_mean) / artifact.dense_scale
+        values = np.asarray(dense_features(text, episode))
+        dense_raw[row] = values
+        dense = (values - artifact.dense_mean) / artifact.dense_scale
         raw[row] += dense @ artifact.dense_coef
 
     n_m = artifact.n_models
     pred_score = np.clip(raw[:, :n_m], 0.0, 1.0)
-    pred_out = np.expm1(np.clip(raw[:, n_m:2 * n_m], -50.0, 50.0)).clip(0.0)
+    tokens = artifact.forest.predict(dense_raw)
+    pred_out = np.expm1(np.clip(tokens[:, :n_m], -50.0, 50.0)).clip(0.0)
     pred_out = pred_out * artifact.token_bump
     # 입력 토큰 수도 라우팅 시점에 주어지지 않으므로 학습과 같은 예측값을 쓴다.
-    pred_in = np.expm1(np.clip(raw[:, 2 * n_m:2 * n_m + 1], -50.0, 50.0)).clip(1.0)
+    pred_in = np.expm1(np.clip(tokens[:, n_m:n_m + 1], -50.0, 50.0)).clip(1.0)
     in_rep = np.repeat(pred_in, n_m, axis=1)
     pred_cost = (in_rep * artifact.rate_in + pred_out * artifact.rate_out) / artifact.token_unit
     pred_cost = pred_cost * artifact.cost_scale
