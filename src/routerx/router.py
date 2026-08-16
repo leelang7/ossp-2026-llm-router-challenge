@@ -51,6 +51,8 @@ class Artifact:
         self.token_unit = float(data["token_unit"])
         self.tiers: List[str] = [str(t) for t in data["tiers"]]
         self.safety = {t: float(v) for t, v in zip(self.tiers, data["safety"])}
+        caps = data["k1_cap"] if "k1_cap" in data.files else np.ones(len(self.tiers))
+        self.k1_cap = {t: float(v) for t, v in zip(self.tiers, caps)}
         self.model_ids: List[str] = [str(m) for m in data["model_ids"]]
         self.policy_id = str(data["policy_id"])
         self.meta = json.loads(str(data["meta"]))
@@ -79,12 +81,17 @@ def predict(episodes: Sequence, artifact: Artifact):
     for row, episode in enumerate(episodes):
         text = episode_text(episode)
         tie_keys[row] = _tie_key(text)
-        sparse_row = tfidf_row(word_ngrams(text), artifact.vocab_word, artifact.idf_word)
-        sparse_row.update(
-            tfidf_row(char_wb_ngrams(text), artifact.vocab_char, artifact.idf_char,
-                      offset=artifact.n_word)
+        # 학습에서는 word·char 두 TfidfVectorizer가 각자 L2 정규화한 결과를 이어붙인다.
+        # 합친 뒤 한 번만 정규화하면 블록 간 비중이 달라져 예측이 어긋난다.
+        sparse_row = l2_normalize(
+            tfidf_row(word_ngrams(text), artifact.vocab_word, artifact.idf_word)
         )
-        sparse_row = l2_normalize(sparse_row)
+        sparse_row.update(
+            l2_normalize(
+                tfidf_row(char_wb_ngrams(text), artifact.vocab_char, artifact.idf_char,
+                          offset=artifact.n_word)
+            )
+        )
         if sparse_row:
             columns = np.fromiter(sparse_row.keys(), dtype=np.int64, count=len(sparse_row))
             values = np.fromiter(sparse_row.values(), dtype=np.float64, count=len(sparse_row))
@@ -109,5 +116,6 @@ def route(episodes: Sequence, artifact: Artifact, tier: str) -> List[str]:
     pred_score, pred_cost, tie_keys = predict(episodes, artifact)
     multiplier = {"fast": 1.25, "balanced": 2.0, "premium": 4.0}[tier]
     selected = select_batch(pred_score, pred_cost, multiplier,
-                            artifact.safety.get(tier, 0.85), tie_keys)
+                            artifact.safety.get(tier, 0.85), tie_keys,
+                            artifact.k1_cap.get(tier, 1.0))
     return [artifact.model_ids[int(i)] for i in selected]

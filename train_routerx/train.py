@@ -93,6 +93,8 @@ def main(argv=None) -> int:
                     help="학습 분할에서 예산의 이 비율까지만 사용하도록 안전계수를 정한다")
     ap.add_argument("--tier-margin", action="append", default=None, metavar="TIER=RATIO",
                     help="등급별 예산 마진 (예: premium=0.88). 여러 번 지정 가능")
+    ap.add_argument("--tier-k1-cap", action="append", default=None, metavar="TIER=RATIO",
+                    help="등급별 추론 모델 선택 비율 상한 (예: premium=0.11)")
     ap.add_argument("--fit-on", choices=("train", "train+dev"), default="train+dev")
     args = ap.parse_args(argv)
 
@@ -152,12 +154,22 @@ def main(argv=None) -> int:
         if tier_name not in margins:
             raise SystemExit(f"알 수 없는 등급: {tier_name}")
         margins[tier_name] = float(value)
-    print("budget margins:", margins)
+    # 추론 모델(axk1-think)은 출력 토큰 꼬리가 두꺼워 한 문항이 경량 총비용의 26%까지
+    # 쓸 수 있다. 교차검증 결과 선택 건수 자체를 묶는 편이 예산 초과를 막으면서
+    # 점수도 높았다(고비용 구간은 이득/비용비도 최저였다).
+    k1_caps = {tier: 1.0 for tier in TIERS}
+    for item in args.tier_k1_cap or ():
+        tier_name, _, value = item.partition("=")
+        if tier_name not in k1_caps:
+            raise SystemExit(f"알 수 없는 등급: {tier_name}")
+        k1_caps[tier_name] = float(value)
+    print("budget margins:", margins, "| k1 caps:", k1_caps)
     for tier in TIERS:
         mult = float(policy.tiers[tier].budget_multiplier)
         chosen = 0.30
         for s in np.round(np.arange(0.30, 1.401, 0.005), 4)[::-1]:
-            idx = select_batch(pred_score_oof, pred_cost_oof, mult, float(s), keys)
+            idx = select_batch(pred_score_oof, pred_cost_oof, mult, float(s), keys,
+                               k1_caps[tier])
             ratio = fit_C[np.arange(len(idx)), idx].sum() / fit_C[:, 0].sum()
             if ratio <= mult * margins[tier]:
                 chosen = float(s)
@@ -183,12 +195,13 @@ def main(argv=None) -> int:
         token_bump=bump, cost_scale=cost_scale,
         rate_in=rate_in, rate_out=rate_out, token_unit=np.float64(unit),
         safety=np.array([safety[t] for t in TIERS], dtype=np.float64),
+        k1_cap=np.array([k1_caps[t] for t in TIERS], dtype=np.float64),
         tiers=np.array(list(TIERS), dtype=object),
         model_ids=np.array(list(MODEL_IDS), dtype=object),
         policy_id=np.array(policy.policy_id, dtype=object),
         meta=np.array(json.dumps({
             "alpha": args.alpha, "cost_quantile": args.cost_quantile,
-            "budget_margins": margins, "fit_on": args.fit_on,
+            "budget_margins": margins, "k1_caps": k1_caps, "fit_on": args.fit_on,
             "n_fit": int(X.shape[0]), "n_features": int(X.shape[1]),
         }), dtype=object),
         allow_pickle=True,
