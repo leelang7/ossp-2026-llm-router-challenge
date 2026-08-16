@@ -20,8 +20,11 @@ COPY container/requirements-runtime.txt /tmp/requirements-runtime.txt
 RUN python3 -m pip install --no-cache-dir -r /tmp/requirements-runtime.txt \
     && rm -f /tmp/requirements-runtime.txt \
     && python3 -m pip uninstall --yes pip setuptools wheel \
-    && find /usr/local/lib/python3.11 -type d -name '__pycache__' -prune -exec rm -rf {} + \
     && find /usr/local/lib/python3.11 -type d -name tests -prune -exec rm -rf {} +
+
+# 루트 파일 시스템이 읽기 전용이라 실행 중에는 .pyc를 만들 수 없다. 미리 컴파일해
+# 두지 않으면 등급 실행마다 표준 라이브러리를 다시 컴파일하며 몇 초를 버린다.
+RUN python3 -m compileall -q /usr/local/lib/python3.11 || true
 
 COPY --chown=65532:65532 src /opt/router/
 COPY --chown=65532:65532 container/entrypoint_routerx.py /opt/router/entrypoint.py

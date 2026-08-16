@@ -31,7 +31,8 @@ def write_atomic(path: Path, payload: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
     try:
-        temporary.write_text(payload, encoding="utf-8")
+        # 입력 규격이 고립 서로게이트를 허용하므로 출력에서도 막히지 않게 한다.
+        temporary.write_text(payload, encoding="utf-8", errors="surrogatepass")
         os.chmod(temporary, 0o644)
         os.replace(str(temporary), str(path))
     finally:
@@ -68,9 +69,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 for episode, model_id in zip(inputs.episodes, chosen)
             ),
         )
-        write_atomic(args.output, dumps_json(submission_to_dict(submission)) + "\n")
-    except (OSError, ProtocolError, ValueError) as exc:
-        print(f"오류: {exc}", file=sys.stderr)
+        write_atomic(args.output, dumps_json(submission_to_dict(submission)))
+    except Exception as exc:      # noqa: BLE001 - 어떤 실패든 규격이 정한 종료 코드로 알린다
+        print(f"오류: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2
     print(f"OK: {args.tier} 선택 결과를 {args.output}에 기록했습니다.")
     return 0

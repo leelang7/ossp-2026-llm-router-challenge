@@ -53,6 +53,7 @@ class Artifact:
         self.safety = {t: float(v) for t, v in zip(self.tiers, data["safety"])}
         caps = data["k1_cap"] if "k1_cap" in data.files else np.ones(len(self.tiers))
         self.k1_cap = {t: float(v) for t, v in zip(self.tiers, caps)}
+        self.k1_item_cap = float(data["k1_item_cap"]) if "k1_item_cap" in data.files else 1.0
         self.model_ids: List[str] = [str(m) for m in data["model_ids"]]
         self.policy_id = str(data["policy_id"])
         self.meta = json.loads(str(data["meta"]))
@@ -66,8 +67,12 @@ class Artifact:
 
 
 def _tie_key(text: str) -> float:
-    """프롬프트 내용만으로 만든 동률 정렬 키 (입력 순서와 무관)."""
-    digest = hashlib.sha256(text.encode("utf-8")).digest()
+    """프롬프트 내용만으로 만든 그룹·정렬 키 (입력 순서와 무관).
+
+    입력 규격은 고립 서로게이트를 허용하므로 surrogatepass로 인코딩한다.
+    기본 인코딩은 UnicodeEncodeError를 내고, 그 예외가 등급 실행 실패로 이어진다.
+    """
+    digest = hashlib.sha256(text.encode("utf-8", errors="surrogatepass")).digest()
     return int.from_bytes(digest[:8], "big") / float(1 << 64)
 
 
@@ -117,5 +122,5 @@ def route(episodes: Sequence, artifact: Artifact, tier: str) -> List[str]:
     multiplier = {"fast": 1.25, "balanced": 2.0, "premium": 4.0}[tier]
     selected = select_batch(pred_score, pred_cost, multiplier,
                             artifact.safety.get(tier, 0.85), tie_keys,
-                            artifact.k1_cap.get(tier, 1.0))
+                            artifact.k1_cap.get(tier, 1.0), artifact.k1_item_cap)
     return [artifact.model_ids[int(i)] for i in selected]
