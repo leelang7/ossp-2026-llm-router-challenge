@@ -662,6 +662,19 @@ class RepositoryPolicyTest(unittest.TestCase):
             "!container/Dockerfile",
             "!container/measurement.Dockerfile",
             "!container/entrypoint.py",
+            # 참가팀 제출 라우터: 이미지에 넣을 파일만 허용 목록으로 연다.
+            "# routerx 제출 라우터",
+            "!src/routerx/",
+            "src/routerx/**",
+            "!src/routerx/__init__.py",
+            "!src/routerx/features.py",
+            "!src/routerx/policy.py",
+            "!src/routerx/router.py",
+            "!src/routerx/cli.py",
+            "!src/routerx/artifact.npz",
+            "!container/Dockerfile.routerx",
+            "!container/entrypoint_routerx.py",
+            "!container/requirements-runtime.txt",
         ]
         self.assertEqual(expected_dockerignore, dockerignore)
 
@@ -695,6 +708,15 @@ class RepositoryPolicyTest(unittest.TestCase):
             re.compile(r"sk-[A-Za-z0-9]{20,}"),
             re.compile(r"xox[baprs]-[A-Za-z0-9-]{20,}"),
         )
+        # 참가팀 제출물: 라우터 학습 산출물은 규격상 저장소에 포함해야 한다.
+        # SUBMISSION.md는 실행 중 다운로드나 비공개 경로 의존을 금지하므로
+        # 학습된 계수·어휘를 커밋해야 하며, 바이너리라 텍스트 검사 대상이 아니다.
+        submission_artifacts = {"src/routerx/artifact.npz"}
+        text_files = [
+            path for path in text_files
+            if path.relative_to(ROOT).as_posix() not in submission_artifacts
+        ]
+
         findings = []
         for path in text_files:
             try:
