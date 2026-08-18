@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: Copyright 2026 routerx contributors
+# SPDX-License-Identifier: Apache-2.0
+
+﻿[16s] X=(2640, 180036)
+
+===== 5-fold (528문항 홀드아웃) [173s] =====
+--- 기준: cap 없음 ---
+margin=0.90 cap=none                         CV=0.491780 실패= 4 fast=0.91/1.06  bala=0.90/1.11  prem=0.94/1.17 K1=21.9%  {'fast': 1, 'balanced': 1, 'premium': 2}
+margin=0.85 cap=none                         CV=0.539905 실패= 3 fast=0.87/0.98  bala=0.84/1.05  prem=0.90/1.13 K1=20.6%  {'balanced': 1, 'premium': 2}
+margin=0.82 cap=none                         CV=0.576042 실패= 2 fast=0.84/0.93  bala=0.81/0.98  prem=0.87/1.10 K1=18.9%  {'premium': 2}
+--- 규칙 A: 승격 1건 ≤ 여유의 cap_share ---
+margin=0.95 cap_share=0.2                    CV=0.445786 실패= 5 fast=0.96/1.14  bala=0.96/1.22  prem=0.98/1.19 K1=23.3%  {'fast': 2, 'balanced': 1, 'premium': 2}
+margin=0.90 cap_share=0.2                    CV=0.491780 실패= 4 fast=0.91/1.06  bala=0.90/1.11  prem=0.94/1.17 K1=21.9%  {'fast': 1, 'balanced': 1, 'premium': 2}
+margin=0.95 cap_share=0.1                    CV=0.445786 실패= 5 fast=0.96/1.14  bala=0.96/1.22  prem=0.98/1.19 K1=23.3%  {'fast': 2, 'balanced': 1, 'premium': 2}
+margin=0.90 cap_share=0.1                    CV=0.491780 실패= 4 fast=0.91/1.06  bala=0.90/1.11  prem=0.94/1.17 K1=21.9%  {'fast': 1, 'balanced': 1, 'premium': 2}
+margin=0.95 cap_share=0.05                   CV=0.445786 실패= 5 fast=0.96/1.14  bala=0.96/1.22  prem=0.98/1.19 K1=23.3%  {'fast': 2, 'balanced': 1, 'premium': 2}
+margin=0.90 cap_share=0.05                   CV=0.491780 실패= 4 fast=0.91/1.06  bala=0.90/1.11  prem=0.94/1.17 K1=21.9%  {'fast': 1, 'balanced': 1, 'premium': 2}
+margin=0.95 cap_share=0.02                   CV=0.444195 실패= 5 fast=0.96/1.14  bala=0.94/1.19  prem=0.98/1.19 K1=23.3%  {'fast': 2, 'balanced': 1, 'premium': 2}
+margin=0.90 cap_share=0.02                   CV=0.490701 실패= 4 fast=0.91/1.06  bala=0.89/1.10  prem=0.94/1.17 K1=21.9%  {'fast': 1, 'balanced': 1, 'premium': 2}
+--- 규칙 B: K1 예측비용 상위 분위 제외 ---
+margin=0.95 drop_q=0.9                       CV=0.445786 실패= 5 fast=0.96/1.14  bala=0.96/1.22  prem=0.98/1.19 K1=23.3%  {'fast': 2, 'balanced': 1, 'premium': 2}
+margin=0.90 drop_q=0.9                       CV=0.491780 실패= 4 fast=0.91/1.06  bala=0.90/1.11  prem=0.94/1.17 K1=21.9%  {'fast': 1, 'balanced': 1, 'premium': 2}
+margin=0.95 drop_q=0.8                       CV=0.445814 실패= 5 fast=0.96/1.14  bala=0.96/1.22  prem=0.96/1.19 K1=23.6%  {'fast': 2, 'balanced': 1, 'premium': 2}
+margin=0.90 drop_q=0.8                       CV=0.491723 실패= 4 fast=0.91/1.06  bala=0.90/1.11  prem=0.91/1.16 K1=21.9%  {'fast': 1, 'balanced': 1, 'premium': 2}
+margin=0.95 drop_q=0.7                       CV=0.445388 실패= 5 fast=0.96/1.14  bala=0.96/1.22  prem=0.96/1.22 K1=24.8%  {'fast': 2, 'balanced': 1, 'premium': 2}
+margin=0.90 drop_q=0.7                       CV=0.491439 실패= 4 fast=0.91/1.06  bala=0.90/1.11  prem=0.91/1.16 K1=22.8%  {'fast': 1, 'balanced': 1, 'premium': 2}
+--- A+B 결합 ---
+margin=0.95 cap=0.1 drop=0.9                 CV=0.445786 실패= 5 fast=0.96/1.14  bala=0.96/1.22  prem=0.98/1.19 K1=23.3%  {'fast': 2, 'balanced': 1, 'premium': 2}
+margin=0.95 cap=0.05 drop=0.9                CV=0.445786 실패= 5 fast=0.96/1.14  bala=0.96/1.22  prem=0.98/1.19 K1=23.3%  {'fast': 2, 'balanced': 1, 'premium': 2}
+margin=0.95 cap=0.05 drop=0.8                CV=0.445814 실패= 5 fast=0.96/1.14  bala=0.96/1.22  prem=0.96/1.19 K1=23.6%  {'fast': 2, 'balanced': 1, 'premium': 2}
+margin=0.95 cap=0.02 drop=0.8                CV=0.444223 실패= 5 fast=0.96/1.14  bala=0.94/1.19  prem=0.96/1.19 K1=23.6%  {'fast': 2, 'balanced': 1, 'premium': 2}
+
+===== 8-fold (330문항 홀드아웃) [730s] =====
+--- 기준: cap 없음 ---
+margin=0.90 cap=none                         CV=0.565691 실패= 4 fast=0.90/1.04  bala=0.92/1.14  prem=0.85/1.04 K1=21.1%  {'fast': 1, 'balanced': 2, 'premium': 1}
+margin=0.85 cap=none                         CV=0.644555 실패= 1 fast=0.84/0.86  bala=0.87/1.03  prem=0.81/1.00 K1=19.6%  {'balanced': 1}
+margin=0.82 cap=none                         CV=0.638030 실패= 1 fast=0.81/0.83  bala=0.84/1.00  prem=0.78/0.95 K1=18.5%  {'balanced': 1}
+--- 규칙 A: 승격 1건 ≤ 여유의 cap_share ---
+margin=0.95 cap_share=0.2                    CV=0.485814 실패= 7 fast=0.95/1.08  bala=0.98/1.30  prem=0.93/1.33 K1=22.4%  {'fast': 2, 'balanced': 3, 'premium': 2}
+margin=0.90 cap_share=0.2                    CV=0.565691 실패= 4 fast=0.90/1.04  bala=0.92/1.14  prem=0.85/1.04 K1=21.1%  {'fast': 1, 'balanced': 2, 'premium': 1}
+margin=0.95 cap_share=0.1                    CV=0.485814 실패= 7 fast=0.95/1.08  bala=0.98/1.30  prem=0.93/1.33 K1=22.4%  {'fast': 2, 'balanced': 3, 'premium': 2}
+margin=0.90 cap_share=0.1                    CV=0.565691 실패= 4 fast=0.90/1.04  bala=0.92/1.14  prem=0.85/1.04 K1=21.1%  {'fast': 1, 'balanced': 2, 'premium': 1}
+margin=0.95 cap_share=0.05                   CV=0.485530 실패= 7 fast=0.95/1.08  bala=0.98/1.30  prem=0.93/1.33 K1=22.4%  {'fast': 2, 'balanced': 3, 'premium': 2}
+margin=0.90 cap_share=0.05                   CV=0.565379 실패= 4 fast=0.90/1.04  bala=0.92/1.15  prem=0.85/1.04 K1=21.1%  {'fast': 1, 'balanced': 2, 'premium': 1}
+margin=0.95 cap_share=0.02                   CV=0.511326 실패= 6 fast=0.95/1.08  bala=0.93/1.13  prem=0.88/1.06 K1=25.3%  {'fast': 2, 'balanced': 2, 'premium': 2}
+margin=0.90 cap_share=0.02                   CV=0.589886 실패= 3 fast=0.90/1.04  bala=0.89/1.06  prem=0.84/1.01 K1=24.2%  {'fast': 1, 'balanced': 1, 'premium': 1}
+--- 규칙 B: K1 예측비용 상위 분위 제외 ---
+margin=0.95 drop_q=0.9                       CV=0.485814 실패= 7 fast=0.95/1.08  bala=0.98/1.30  prem=0.93/1.33 K1=22.4%  {'fast': 2, 'balanced': 3, 'premium': 2}
+margin=0.90 drop_q=0.9                       CV=0.565691 실패= 4 fast=0.90/1.04  bala=0.92/1.14  prem=0.85/1.04 K1=21.1%  {'fast': 1, 'balanced': 2, 'premium': 1}
+margin=0.95 drop_q=0.8                       CV=0.485871 실패= 7 fast=0.95/1.08  bala=0.98/1.30  prem=0.90/1.07 K1=22.6%  {'fast': 2, 'balanced': 3, 'premium': 2}
+margin=0.90 drop_q=0.8                       CV=0.565634 실패= 4 fast=0.90/1.04  bala=0.92/1.14  prem=0.85/1.04 K1=21.1%  {'fast': 1, 'balanced': 2, 'premium': 1}
+margin=0.95 drop_q=0.7                       CV=0.485701 실패= 7 fast=0.95/1.08  bala=0.98/1.30  prem=0.93/1.34 K1=23.9%  {'fast': 2, 'balanced': 3, 'premium': 2}
+margin=0.90 drop_q=0.7                       CV=0.537595 실패= 5 fast=0.90/1.04  bala=0.92/1.14  prem=0.86/1.03 K1=22.1%  {'fast': 1, 'balanced': 2, 'premium': 2}
+--- A+B 결합 ---
+margin=0.95 cap=0.1 drop=0.9                 CV=0.485814 실패= 7 fast=0.95/1.08  bala=0.98/1.30  prem=0.93/1.33 K1=22.4%  {'fast': 2, 'balanced': 3, 'premium': 2}
+margin=0.95 cap=0.05 drop=0.9                CV=0.485530 실패= 7 fast=0.95/1.08  bala=0.98/1.30  prem=0.93/1.33 K1=22.4%  {'fast': 2, 'balanced': 3, 'premium': 2}
+margin=0.95 cap=0.05 drop=0.8                CV=0.485587 실패= 7 fast=0.95/1.08  bala=0.98/1.30  prem=0.90/1.07 K1=22.6%  {'fast': 2, 'balanced': 3, 'premium': 2}
+margin=0.95 cap=0.02 drop=0.8                CV=0.511241 실패= 6 fast=0.95/1.08  bala=0.93/1.13  prem=0.89/1.06 K1=25.3%  {'fast': 2, 'balanced': 2, 'premium': 2}
+
+[1247s] done

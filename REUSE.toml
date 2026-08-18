@@ -58,3 +58,10 @@ path = [
 precedence = "override"
 SPDX-FileCopyrightText = "Copyright 2026 SK TELECOM CO., LTD."
 SPDX-License-Identifier = "Apache-2.0"
+
+# 작업 노트: 진행 기록·실험 스크립트·제출 준비 문서
+[[annotations]]
+path = ["notes/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "Copyright 2026 routerx contributors"
+SPDX-License-Identifier = "Apache-2.0"

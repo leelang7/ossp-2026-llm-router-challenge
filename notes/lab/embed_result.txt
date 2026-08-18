@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: Copyright 2026 routerx contributors
+# SPDX-License-Identifier: Apache-2.0
+
+﻿python : Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate l
+imits and faster downloads.
+At line:1 char:372
++ ... ation d:\opensource\skt-router; python lab\embed_test.py 2>&1 | Tee-O ...
++                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: You ar...ster downloads.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[4s] n=2640
+
+=== 기준: TF-IDF ridge (현재 구성) ===
+  TF-IDF ridge a=5                           d2corr=0.425 AUC=0.736 score=[0.509, 0.54, 0.502]
+
+=== e5-small (intfloat/multilingual-e5-small) ===
+
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 199/199 [00:00<00:00, 13416.70it/s]
+  임베딩 (2640, 384) 추출 3.2s (GPU)
+  e5-small ridge                             d2corr=0.372 AUC=0.717 score=[0.46, 0.471, 0.421]
+  e5-small GBM                               d2corr=0.328 AUC=0.694 score=[0.449, 0.444, 0.378]
+  e5-small+dense ridge                       d2corr=0.371 AUC=0.721 score=[0.474, 0.488, 0.451]
+  TFIDF0.3 + e5-small+dense0.7               d2corr=0.395 AUC=0.728 score=[0.494, 0.514, 0.478]
+  TFIDF0.5 + e5-small+dense0.5               d2corr=0.408 AUC=0.732 score=[0.503, 0.526, 0.491]
+  TFIDF0.7 + e5-small+dense0.3               d2corr=0.417 AUC=0.734 score=[0.509, 0.535, 0.499]
+  3방향 앙상블 (e5-small)                         d2corr=0.407 AUC=0.730 score=[0.509, 0.527, 0.485]
+
+=== mini-L12 (sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2) ===
+
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 199/199 [00:00<00:00, 12385.25it/s]
+  임베딩 (2640, 384) 추출 2.7s (GPU)
+  mini-L12 ridge                             d2corr=0.391 AUC=0.730 score=[0.443, 0.461, 0.409]
+  mini-L12 GBM                               d2corr=0.370 AUC=0.726 score=[0.464, 0.499, 0.398]
+  mini-L12+dense ridge                       d2corr=0.394 AUC=0.737 score=[0.465, 0.482, 0.443]
+  TFIDF0.3 + mini-L12+dense0.7               d2corr=0.412 AUC=0.742 score=[0.49, 0.511, 0.473]
+  TFIDF0.5 + mini-L12+dense0.5               d2corr=0.421 AUC=0.742 score=[0.503, 0.525, 0.487]
+  TFIDF0.7 + mini-L12+dense0.3               d2corr=0.426 AUC=0.740 score=[0.51, 0.535, 0.497]
+  3방향 앙상블 (mini-L12)                         d2corr=0.428 AUC=0.746 score=[0.512, 0.542, 0.488]
+
+[332s] done

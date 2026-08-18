@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright 2026 routerx contributors
+# SPDX-License-Identifier: Apache-2.0
+
+﻿[44s] 특징 구성 3종
+
+=== 단일 모델 ===
+  base-a3                                        d2corr=0.4245 AUC=0.7359 score=[0.508, 0.542, 0.505]
+  base-a5                                        d2corr=0.4246 AUC=0.7357 score=[0.509, 0.54, 0.502]
+  base-a8                                        d2corr=0.4195 AUC=0.7327 score=[0.505, 0.533, 0.495]
+  wide-char-a3                                   d2corr=0.4252 AUC=0.7367 score=[0.511, 0.544, 0.504]
+  wide-char-a5                                   d2corr=0.4250 AUC=0.7362 score=[0.512, 0.542, 0.501]
+  wide-char-a8                                   d2corr=0.4200 AUC=0.7330 score=[0.507, 0.535, 0.495]
+  word3-a3                                       d2corr=0.4248 AUC=0.7358 score=[0.509, 0.543, 0.505]
+  word3-a5                                       d2corr=0.4250 AUC=0.7356 score=[0.51, 0.541, 0.502]
+  word3-a8                                       d2corr=0.4197 AUC=0.7325 score=[0.506, 0.534, 0.495]
+
+=== 계수 평균 앙상블 (런타임 비용 동일) ===
+  base a3+a5+a8                                  d2corr=0.4245 AUC=0.7355 score=[0.509, 0.54, 0.502]
+  3구성 a5                                         d2corr=0.4250 AUC=0.7358 score=[0.51, 0.541, 0.502]
+  3구성 x 3alpha (전체 9)                            d2corr=0.4249 AUC=0.7358 score=[0.51, 0.541, 0.502]
+  base+wide a3,a5                                d2corr=0.4256 AUC=0.7363 score=[0.511, 0.543, 0.504]
+
+=== 부트스트랩 배깅 (base 구성, alpha=5) ===
+  부트스트랩 2개                                       d2corr=0.4140 AUC=0.7292 score=[0.488, 0.517, 0.477]
+  부트스트랩 3개                                       d2corr=0.4219 AUC=0.7301 score=[0.493, 0.526, 0.482]
+  부트스트랩 5개                                       d2corr=0.4221 AUC=0.7334 score=[0.497, 0.529, 0.492]
+  부트스트랩 5 + 전체적합                                 d2corr=0.4230 AUC=0.7339 score=[0.5, 0.532, 0.495]
+
+  → 최고: base+wide a3,a5 (d2corr 0.4256, AUC 0.7363)
+  기준(base-a5): d2corr 0.4083
+[266s] done

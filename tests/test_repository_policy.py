@@ -711,7 +711,11 @@ class RepositoryPolicyTest(unittest.TestCase):
         # 참가팀 제출물: 라우터 학습 산출물은 규격상 저장소에 포함해야 한다.
         # SUBMISSION.md는 실행 중 다운로드나 비공개 경로 의존을 금지하므로
         # 학습된 계수·어휘를 커밋해야 하며, 바이너리라 텍스트 검사 대상이 아니다.
-        submission_artifacts = {"src/routerx/artifact.npz"}
+        submission_artifacts = {
+            "src/routerx/artifact.npz",
+            # 작업 노트의 결과보고서 원본(DOCX). 라이선스는 REUSE.toml에 선언한다.
+            "notes/2026 오픈소스 개발자대회 결과보고서_접수번호(팀명).docx",
+        }
         text_files = [
             path for path in text_files
             if path.relative_to(ROOT).as_posix() not in submission_artifacts
