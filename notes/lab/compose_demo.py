@@ -25,6 +25,9 @@ DIM = (146, 156, 174)
 ACC = (86, 204, 242)
 OK = (94, 224, 160)
 FONTS = Path(r"C:\Windows\Fonts")
+# 녹화 시작 직후 몇 초는 터미널이 화면을 덮기 전이라 바탕화면이 그대로 찍힌다.
+# 그만큼을 잘라내고, 나레이션·자막 시각도 같은 폭으로 당긴다.
+TRIM = 3.2
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_narration import BLOCKS  # noqa: E402
@@ -80,20 +83,21 @@ def duration_of(path: Path) -> float:
 
 
 def main() -> int:
-    rec_len = duration_of(REC)
-    print(f"녹화 {rec_len:.1f}초")
+    rec_len = duration_of(REC) - TRIM
+    print(f"녹화 {rec_len:.1f}초 (앞 {TRIM}초 잘라냄)")
 
     # 1) 나레이션을 시각에 맞춰 배치하고 하나로 섞는다
-    inputs = ["-i", str(REC)]
+    inputs = ["-ss", f"{TRIM}", "-i", str(REC)]
     filters = []
     count = 0
-    for index, (start, _text) in enumerate(BLOCKS):
+    for index, (start, _say, _caption) in enumerate(BLOCKS):
         mp3 = TTS / f"n{index:02d}.mp3"
         if not mp3.exists():
             continue
         inputs += ["-i", str(mp3)]
         count += 1
-        filters.append(f"[{count}:a]adelay={int(start * 1000)}|{int(start * 1000)}[d{count}]")
+        delay = int(max(0.0, start - TRIM) * 1000)
+        filters.append(f"[{count}:a]adelay={delay}|{delay}[d{count}]")
     mix = "".join(f"[d{i + 1}]" for i in range(count))
     filters.append(f"{mix}amix=inputs={count}:normalize=0:duration=longest[aout]")
 
