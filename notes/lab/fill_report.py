@@ -27,7 +27,7 @@ REPO = "https://github.com/leelang7/ossp-2026-llm-router-challenge"
 TAG = "submission-2026"
 IMAGE = ("ghcr.io/leelang7/routerx@sha256:"
          "ea01be4aa373f1358450c56105f4f595619b7fa2bd272d418c9bc71f8b75016f")
-VIDEO = "[유튜브 URL — 업로드 후 기재]"
+VIDEO = "https://youtu.be/ejKfuvM4vdg"
 
 BODY = {
     1: "프롬프트 난이도 인지 기반 경량 LLM 라우터",
@@ -304,7 +304,10 @@ def main() -> int:
     doc.save(OUT)
     print(f"저장: {OUT}")
     print(f"  팀명 {TEAM} / 인원 {MEMBERS} / 등록 URL 반영")
-    print(f"  남은 자리표시자: 시연영상 URL")
+    if VIDEO.startswith("http"):
+        print(f"  시연영상 {VIDEO}")
+    else:
+        print("  남은 자리표시자: 시연영상 URL")
     return 0
 
 
