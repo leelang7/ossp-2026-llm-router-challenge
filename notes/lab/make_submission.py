@@ -20,7 +20,7 @@ import zipfile
 from pathlib import Path
 
 LAB = Path(r"d:\opensource\skt-router")
-NAME = "2026 오픈소스 개발자대회 결과보고서_접수번호(트리아지)"
+NAME = "2026 오픈소스 개발자대회 결과보고서_830(트리아지)"
 DOCX = LAB / f"{NAME}.docx"
 PDF = LAB / f"{NAME}.pdf"
 EXTRA = LAB / "출품작 중복수혜 여부 확인서.pdf"   # 해당 시에만

@@ -40,8 +40,8 @@ SPDX-License-Identifier = "Apache-2.0 AND BSD-3-Clause AND CC-BY-SA-4.0 AND MIT"
 # REUSE 6.2 may misdetect the encoding of these Korean-heavy Markdown files.
 [[annotations]]
 path = [
+  "CHALLENGE.md",
   "DEVELOPING.md",
-  "README.md",
   "container/BASE_IMAGE.md",
   "container/README.md",
   "data/sources/README.md",

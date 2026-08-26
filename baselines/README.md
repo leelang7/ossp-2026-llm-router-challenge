@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Baseline
 
-README의 [Quickstart](../README.md#quickstart-baseline에서-시작하기)에서
+README의 [Quickstart](../CHALLENGE.md#quickstart-baseline에서-시작하기)에서
 실행과 검증 흐름을 먼저 확인한 뒤, 아래 예제 중 목적에 가까운 구현을 출발점으로
 사용할 수 있습니다. 실제 제출에서는 `src/ossp_router/heuristic.py`를 바꾸거나
 같은 `router-run` 인터페이스를 제공하는 구현으로 교체하면 됩니다.

@@ -17,14 +17,16 @@ from docx.shared import Pt
 
 SRC = Path(r"D:\opensource\결과보고서양식\2026 오픈소스 개발자대회 결과보고서_접수번호(팀명)"
            r"\2026 오픈소스 개발자대회 결과보고서_접수번호(팀명).docx")
-OUT = Path(r"d:\opensource\skt-router\2026 오픈소스 개발자대회 결과보고서_접수번호(트리아지).docx")
+OUT = Path(r"d:\opensource\skt-router\2026 오픈소스 개발자대회 결과보고서_830(트리아지).docx")
 
 TEAM = "트리아지"
 MEMBERS = "2명"
 REPO = "https://github.com/leelang7/ossp-2026-llm-router-challenge"
-# 제출 가이드: 프로젝트 등록 URL에는 대표 저장소 링크 하나만 적는다.
-# 심사 기준 시점은 본문 7번 항목에 저장소 태그로 따로 밝힌다.
+# 대회 제출 가이드는 프로젝트 등록 URL에 대표 저장소 링크 하나만 적도록 한다.
+# 반면 지정과제 안내는 제출 커밋의 고정 스냅샷 URL을 요구한다. 두 요구를 모두
+# 만족시키기 위해 등록 URL은 저장소 루트로 두고, 평가 대상 커밋은 본문 7번에 밝힌다.
 TAG = "submission-2026"
+SKT_COMMIT = "fa1268edff9a3701679ccc393b5dc34c0aabe45c"   # submission-ossp-skt.json 기재 커밋
 IMAGE = ("ghcr.io/leelang7/routerx@sha256:"
          "ea01be4aa373f1358450c56105f4f595619b7fa2bd272d418c9bc71f8b75016f")
 VIDEO = "https://youtu.be/ejKfuvM4vdg"
@@ -55,7 +57,8 @@ BODY = {
        "○ 격리 조건 : 네트워크 차단, 읽기 전용 루트, 비특권 사용자(UID 65532)\n"
        "○ 개발 도구 : Git, Docker Buildx, 표준 라이브러리 unittest\n"
        "○ 산출물 규모 : 컨테이너 이미지 73.4MB, 학습 아티팩트 5.5MB\n"
-       f"○ 심사 기준 스냅샷 : 저장소 태그 {TAG}\n"
+       f"○ 지정과제 평가 대상 커밋 : {REPO}/tree/{SKT_COMMIT}\n"
+       f"  - 저장소 태그 {TAG}는 결과보고서·시연영상을 포함한 제출 시점 전체를 가리킴\n"
        f"○ 제출 이미지 : {IMAGE}",
     8: "○ 특징 추출 — 프롬프트 내용만 사용\n"
        "  - 직접 계산 특징 36종 : 길이, 한글 비율, 수식·코드 표지, 객관식 표지, 대화 구조\n"
