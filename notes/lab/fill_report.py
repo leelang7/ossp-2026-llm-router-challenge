@@ -173,26 +173,32 @@ BODY = {
         "의미를 다시 생각하게 되었다.",
 }
 
+# 부록1 작성 가이드의 우선순위대로 채운다.
+#   ① GPL·AGPL·LGPL 계열 → ② 핵심 기능(빠지면 안 도는 것) → ③ 프레임워크·SDK
+#   → ④ 빌드·실행 도구
+# 라이선스가 서로 다른 것은 한 줄로 묶지 않는다. 버전은 실제 적재된 값을 적고,
+# 사용 목적에는 결합 방식을 함께 밝힌다. 팀이 직접 짠 코드는 적지 않는다.
 SBOM = [
-    ("1", "NumPy", "1.26.4", "BSD-3-Clause", "https://github.com/numpy/numpy",
-     "실행 의존성. 계수 행렬 연산 및 배치 선택 계산"),
-    ("2", "scikit-learn", "1.8.0", "BSD-3-Clause",
+    ("1", "libgfortran", "5.0.0", "GPL-3.0-with-GCC-exception",
+     "https://github.com/gcc-mirror/gcc",
+     "Fortran 런타임 / NumPy 휠 번들, 동적 링크"),
+    ("2", "NumPy", "1.26.4", "BSD-3-Clause", "https://github.com/numpy/numpy",
+     "실행 의존성. 행렬 연산·배치 선택 / 라이브러리로 불러 씀"),
+    ("3", "OpenBLAS", "0.3.23.dev", "BSD-3-Clause",
+     "https://github.com/OpenMathLib/OpenBLAS",
+     "행렬 연산 가속 / NumPy 휠 번들, 동적 링크"),
+    ("4", "CPython", "3.11.16", "PSF-2.0", "https://github.com/python/cpython",
+     "실행 런타임 / python:3.11-slim-bookworm"),
+    ("5", "scikit-learn", "1.8.0", "BSD-3-Clause",
      "https://github.com/scikit-learn/scikit-learn",
-     "학습 전용. TF-IDF 어휘·IDF 생성, ridge 회귀 학습"),
-    ("3", "SciPy", "1.17.1", "BSD-3-Clause", "https://github.com/scipy/scipy",
-     "학습 전용. 희소 행렬 연산"),
-    ("4", "PyArrow", "23.0.1", "Apache-2.0", "https://github.com/apache/arrow",
-     "자료 준비 전용. 공개 Train/Dev 원본 변환"),
-    ("5", "CPython", "3.11", "PSF-2.0", "https://github.com/python/cpython",
-     "실행 런타임"),
-    ("6", "python:3.11-slim-bookworm", "bookworm", "다중(GPL/LGPL/MIT/BSD 등)",
-     "https://hub.docker.com/_/python", "컨테이너 기반 이미지. 상업적 이용·재배포 허용"),
-    ("7", "OpenBLAS, libgfortran 등", "NumPy 휠 번들",
-     "BSD-3-Clause, GPL-3.0-with-GCC-exception", "https://github.com/numpy/numpy",
-     "NumPy manylinux 휠에 포함된 네이티브 라이브러리"),
+     "학습 전용. TF-IDF 어휘 생성·ridge 학습 / 라이브러리로 불러 씀"),
+    ("6", "SciPy", "1.17.1", "BSD-3-Clause", "https://github.com/scipy/scipy",
+     "학습 전용. 희소 행렬 연산 / 라이브러리로 불러 씀"),
+    ("7", "PyArrow", "23.0.1", "Apache-2.0", "https://github.com/apache/arrow",
+     "자료 준비 전용. 원본 변환 / 라이브러리로 불러 씀"),
     ("8", "ossp_router (과제 제공)", "v1", "Apache-2.0",
      "https://github.com/sktelecom/ossp-2026-llm-router-challenge",
-     "입출력 규격 및 채점 도구"),
+     "입출력 규격·채점 도구 / 라이브러리로 불러 씀"),
 ]
 
 
@@ -261,9 +267,10 @@ def main() -> int:
              f"{REPO} 의 src/routerx/artifact.npz\n"
              "(승인 절차 없이 접근 가능, 수상 시 5년간 공개 유지)")
     set_cell(list(ai.rows[8].cells)[-1],
-             "파일명 artifact.npz / 용량 5.5MB / 저장소 직접 커밋\n"
-             "내용 : ridge 회귀 계수, TF-IDF 어휘·IDF, 특징 정규화 통계, "
-             "등급별 안전계수 및 상한값")
+             "파일명 : artifact.npz / 전체 가중치 배포 (ridge 회귀 7개 헤드, "
+             "1.44M 파라미터) / 용량 5.5MB / 저장소 직접 커밋\n"
+             "내용 : 회귀 계수 및 절편, TF-IDF 어휘·IDF(단어 60,000 · 문자 120,000), "
+             "특징 정규화 통계, 등급별 안전계수 및 상한값")
 
     r10 = list(ai.rows[10].cells)
     set_cell(r10[1], "Apache License 2.0")
