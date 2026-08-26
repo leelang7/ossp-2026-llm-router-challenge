@@ -12,6 +12,7 @@ AuraView/scripts/build_tts.py와 같은 방식이다. 차분한 남성 발표 �
 from __future__ import annotations
 
 import base64
+import re
 import json
 import subprocess
 import sys
@@ -49,10 +50,10 @@ STYLE = ("차분하고 또렷한 전문 발표 톤으로, 신뢰감 있게, 너�
 # TTS는 숫자를 한글로 적어야 자연스럽게 읽고, 자막은 숫자 그대로 보여야 읽기 쉽다.
 BLOCKS = [
     (0,
-     "프롬프트 내용만 보고 세 후보 모델 중 하나를 고르는 경량 LLM 라우터입니다. "
-     "예산을 넘기면 해당 등급은 영점입니다.",
-     "프롬프트 내용만 보고 세 후보 모델 중 하나를 고르는 경량 LLM 라우터입니다. "
-     "예산을 넘기면 해당 등급은 0점입니다."),
+     "질문 하나하나의 난이도를 프롬프트만 보고 가늠해, 세 후보 모델 중 가장 알맞은 "
+     "하나에 배정하는 경량 LLM 라우터입니다.",
+     "질문 하나하나의 난이도를 프롬프트만 보고 가늠해, 세 후보 모델 중 가장 알맞은 "
+     "하나에 배정하는 경량 LLM 라우터입니다."),
     (14,
      "먼저 라우팅을 실행합니다. 공개 검증 자료 팔백팔십 문항을 프리미엄 등급으로 "
      "처리합니다. 사 점 이 초가 걸렸고, 제한은 등급당 구십 초입니다.",
@@ -138,9 +139,63 @@ def duration_of(path: Path) -> float:
     return float(out.stdout.strip() or 0)
 
 
+def silence_marks(path: Path) -> list[float]:
+    """음성 안의 쉼(무음) 중앙 시각을 모두 찾아 돌려준다.
+
+    자막을 글자 수 비례로만 나누면 실제 발화 시점과 어긋난다. 낭독 사이의
+    쉼을 찾아 두었다가 자막 경계를 거기에 붙이면 목소리와 자막이 맞는다.
+    """
+    out = subprocess.run(
+        ["ffmpeg", "-v", "info", "-i", str(path),
+         "-af", "silencedetect=noise=-38dB:d=0.13", "-f", "null", "-"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    marks, start = [], None
+    for line in (out.stderr or "").splitlines():
+        if "silence_start:" in line:
+            start = float(line.rsplit("silence_start:", 1)[1].split()[0])
+        elif "silence_end:" in line and start is not None:
+            end = float(line.rsplit("silence_end:", 1)[1].split("|")[0].strip())
+            marks.append((start + end) / 2)
+            start = None
+    span = duration_of(path)
+    return [m for m in marks if 0.4 < m < span - 0.4]
+
+
+def phrases(text: str, low: int = 10, high: int = 32) -> list[str]:
+    """자막 한 장에 들어갈 크기로 문장을 나눈다.
+
+    한 장이 10초씩 떠 있으면 읽기 힘들고, 두 줄을 넘으면 뒷부분이 화면에서
+    잘린다. 마침표·쉼표 뒤 공백에서만 끊어야 "0.7167"이나 "4.2초"의 소수점이
+    문장 끝으로 오인되지 않는다.
+    """
+    tokens = [t for t in re.split(r"(?<=[.,])\s+", text.strip()) if t]
+    parts, buf = [], ""
+    for token in tokens:
+        joined = f"{buf} {token}".strip()
+        if buf and len(joined) > high:
+            parts.append(buf)
+            buf = token
+        else:
+            buf = joined
+        if len(buf) >= low and buf.endswith("."):
+            parts.append(buf)
+            buf = ""
+    if buf:
+        if parts and len(buf) < low:
+            parts[-1] = f"{parts[-1]} {buf}"
+        else:
+            parts.append(buf)
+    return [x.rstrip(",") for x in parts]
+
+
 def main() -> int:
     args = sys.argv[1:]
-    targets = [int(a) for a in args] if args else range(len(BLOCKS))
+    if args and args[0] == "--srt":
+        targets = []          # 음성은 그대로 두고 자막만 다시 만든다
+    elif args:
+        targets = [int(a) for a in args]
+    else:
+        targets = range(len(BLOCKS))
     total = 0.0
     used = None
     for i in targets:
@@ -201,16 +256,23 @@ def main() -> int:
             continue
         # 트림한 만큼 당기고, 다음 블록 시작을 넘지 않도록 자막을 자른다
         begin, limit = placed[i], placed[i + 1]
-        pieces = [x.strip().rstrip(".") + "." for x in text.split(". ") if x.strip()]
+        pieces = phrases(text)
+        marks = silence_marks(OUT / f"n{i:02d}.mp3")
         weights = [len(x) for x in pieces]
         total_w = sum(weights) or 1
-        cursor = begin
-        for piece, weight in zip(pieces, weights):
-            length = spans[i] * weight / total_w
-            end = min(cursor + length, limit)
-            if end > cursor:
-                entries.append((cursor, end, wrap(piece)))
-            cursor += length
+        # 글자 수 비례로 경계를 잡고, 근처(±1.2초)에 쉼이 있으면 그쪽으로 옮긴다
+        bounds, acc, prev = [0.0], 0.0, 0.0
+        for w in weights[:-1]:
+            acc += spans[i] * w / total_w
+            near = [m for m in marks if abs(m - acc) <= 1.2 and m > prev + 0.4]
+            prev = min(near, key=lambda m: abs(m - acc)) if near else acc
+            bounds.append(prev)
+        bounds.append(spans[i])
+        for k, piece in enumerate(pieces):
+            a = min(begin + bounds[k], limit)
+            b = min(begin + bounds[k + 1], limit)
+            if b > a + 0.15:
+                entries.append((a, b, wrap(piece)))
 
     lines = [f"{n}\n{stamp(a)} --> {stamp(b)}\n{body}\n"
              for n, (a, b, body) in enumerate(entries, start=1)]

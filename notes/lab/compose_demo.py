@@ -102,12 +102,15 @@ def main() -> int:
     #    Windows 경로는 subtitles 필터에서 이스케이프가 까다로우므로
     #    작업 디렉터리를 자막 폴더로 옮기고 파일 이름만 넘긴다(아래 cwd 참고).
     #    original_size를 주지 않으면 자막이 기본 해상도 기준으로 확대되어 화면을 덮는다.
+    #    전체 화면 터미널 아래로 작업 표시줄(하단 40px)이 그대로 찍혔다.
+    #    개인 아이콘이 보이므로 배경색으로 덮고, 자막은 그 위로 올린다.
     srt = "narration.srt"
     style = ("FontName=Malgun Gothic,FontSize=15,PrimaryColour=&H00FFFFFF,"
              "OutlineColour=&HC0000000,BackColour=&HB0000000,BorderStyle=3,"
-             "Outline=3,Shadow=0,MarginV=28,Alignment=2")
+             "Outline=3,Shadow=0,MarginV=54,Alignment=2")
     filters.append(
-        f"[0:v]subtitles='{srt}':original_size={W}x{H}:force_style='{style}'[vout]")
+        f"[0:v]drawbox=x=0:y={H - 44}:w={W}:h=44:color=0x0B0B0B:t=fill,"
+        f"subtitles='{srt}':original_size={W}x{H}:force_style='{style}'[vout]")
 
     body = WORK / "body.mp4"
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *inputs,
