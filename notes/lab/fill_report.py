@@ -18,9 +18,9 @@ from docx.shared import Pt
 
 SRC = Path(r"D:\opensource\결과보고서양식\2026 오픈소스 개발자대회 결과보고서_접수번호(팀명)"
            r"\2026 오픈소스 개발자대회 결과보고서_접수번호(팀명).docx")
-OUT = Path(r"d:\opensource\skt-router\2026 오픈소스 개발자대회 결과보고서_접수번호(팀명).docx")
+OUT = Path(r"d:\opensource\skt-router\2026 오픈소스 개발자대회 결과보고서_접수번호(트리아지).docx")
 
-TEAM = "[팀명]"
+TEAM = "트리아지"
 REPO = "https://github.com/leelang7/ossp-2026-llm-router-challenge"
 
 BODY = {
