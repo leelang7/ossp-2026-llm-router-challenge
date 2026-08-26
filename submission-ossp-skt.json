@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "challenge_id": "ossp-2026-llm-router-challenge",
+  "repository_url": "https://github.com/leelang7/ossp-2026-llm-router-challenge",
+  "commit_sha": "fa1268edff9a3701679ccc393b5dc34c0aabe45c",
+  "image_digest": "ghcr.io/leelang7/routerx@sha256:ea01be4aa373f1358450c56105f4f595619b7fa2bd272d418c9bc71f8b75016f",
+  "primary_license": "Apache-2.0"
+}
