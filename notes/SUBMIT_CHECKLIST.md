@@ -1,120 +1,75 @@
-<!--
-SPDX-FileCopyrightText: Copyright 2026 routerx contributors
-SPDX-License-Identifier: Apache-2.0
--->
+# 제출 점검표
 
-# 최종 제출 절차 (마감 2026-08-27 목 18:00)
+근거: 대회 공지 39호 「출품작 제출 가이드」(2026-08-06 게시) 및 SK텔레콤 지정과제 안내
 
-코드가 확정된 뒤 아래를 **순서대로** 수행한다. 순서가 중요하다 —
-이미지는 코드 커밋에서 빌드하고, 기술 정보 파일은 그 다음 커밋에 넣는다.
+- 마감: **2026년 8월 27일(목) 18:00**
+- 방법: 대회 홈페이지 온라인 제출 — 접수 및 조회 > 출품작 제출 > 제출하기
+- 마감 전까지 접수 정보와 출품작 모두 자유롭게 재업로드 가능. 마감 시점의 최종본이 심사 대상
 
-## 1. 코드 확정과 최종 점검
+## 1. 올리는 것은 zip 하나
 
-```console
-# 아티팩트 재학습 (최종 정책 값으로)
-PYTHONPATH=src python3 train_routerx/train.py \
-  --train-input data/materialized/train/inputs.json \
-  --train-outcomes data/train/outcomes.json \
-  --dev-input data/materialized/dev/inputs.json \
-  --dev-outcomes data/dev/outcomes.json \
-  --artifact src/routerx/artifact.npz \
-  --fit-on train+dev \
-  <최종 확정된 --tier-margin / --tier-k1-cap / --k1-item-cap>
+| | 항목 | 상태 |
+|---|---|---|
+| ① | 결과보고서 원본파일(워드) | 완료 — `2026 오픈소스 개발자대회 결과보고서_접수번호(트리아지).docx` |
+| ② | 결과보고서 PDF 변환파일 | 완료 — 같은 이름의 `.pdf` |
+| ③ | 출품작 중복수혜 여부 확인서 | 해당 없음(미포함) |
 
-# 자체 점검 — 실패가 하나라도 있으면 제출하지 않는다
-PYTHONPATH=src python3 -m routerx.audit \
-  --input data/materialized/train/inputs.json --outcomes data/train/outcomes.json
-PYTHONPATH=src python3 -m routerx.audit \
-  --input data/materialized/dev/inputs.json --outcomes data/dev/outcomes.json
+기타 산출물은 별도 파일로 제출할 수 없다. 보고서 또는 저장소에 포함해야 한다.
 
-# 전체 시험 (공식 저장소 시험 포함)
-PYTHONPATH=src python3 -m unittest discover -s tests -p 'test_*.py'
-```
+`python lab/make_submission.py` 로 zip을 만든다. 보고서에 자리표시자가 남아 있으면
+만들지 않고 멈추므로, 시연영상 URL이 빈 채로 제출되는 사고를 막는다.
 
-## 2. 코드 커밋 (이미지의 기준이 된다)
+## 2. 보고서 내용 요건
 
-```console
-git add -A && git commit -m "..."
-git push origin routerx
-git rev-parse HEAD          # ← 이 40자리가 commit_sha
-```
+| 요건 | 기준 | 현재 |
+|---|---|---|
+| 본문 분량 | 5쪽 이내 | 5쪽 |
+| 프로젝트 등록 URL | 대표 저장소 링크 **1개만** | `github.com/leelang7/ossp-2026-llm-router-challenge` |
+| 시연영상 | 3분 이내, 유튜브 업로드 후 링크 기재 | **미기재 — 업로드 필요** |
+| 붙임1 SBOM | 필수 | 8개 항목 작성 |
+| 붙임2 AI 모델 명세서 | 해당 시. 없으면 삭제 | 유형 3(자체 개발 모델)로 작성 — 유지 |
 
-## 3. arm64 이미지 빌드와 push
+여러 저장소로 나뉘어 있거나 배포 산출물이 따로 있으면 대표 저장소 한 곳에 정리해 기재한다.
+본 과제는 단일 저장소이므로 해당 없음.
 
-기반 이미지 다이제스트에 `linux/arm64`가 있는지 먼저 확인한다(없으면 빌드 실패).
+## 3. 시연영상
 
-```console
-docker buildx imagetools inspect \
-  python:3.11-slim-bookworm@sha256:2e32f7d302adc1c37428355c1e646897c0c53f4fd60b6a551245fb90ee129f91
+| 항목 | 기준 | 현재 |
+|---|---|---|
+| 길이 | 3분 이내 | 1분 40초 |
+| 파일 | — | `notes/demo/routerx_demo.mp4` (2.8MB) |
+| 유튜브 업로드 | 필수 | **미완료** |
 
-# GitHub Container Registry에 push (공개 필요)
-echo $GITHUB_TOKEN | docker login ghcr.io -u leelang7 --password-stdin
-docker buildx build --platform linux/arm64 --push \
-  --file container/Dockerfile.routerx \
-  --tag ghcr.io/leelang7/routerx:submission .
+업로드 후 `lab/fill_report.py`의 `VIDEO`에 링크를 넣고 보고서를 다시 만든다.
 
-# 전체 다이제스트 확보
-docker buildx imagetools inspect ghcr.io/leelang7/routerx:submission \
-  --format '{{.Manifest.Digest}}'
-```
+## 4. 소스코드
 
-push 후 패키지를 **공개(public)** 로 전환해야 한다. ghcr.io 기본값은 비공개다.
+- 저장소 공개 상태 유지 (수상 시 5년)
+- 라이선스 Apache-2.0
+- 심사 기준 시점은 태그 `submission-2026` 으로 고정한다.
+  영상 URL을 반영한 최종 커밋에 태그를 달고 푸시할 것
+- 제출 이미지: `ghcr.io/leelang7/routerx@sha256:ea01be4a…`
 
-## 4. 공식 실행 검증 (push한 이미지로)
+## 5. 제출 후 반드시 확인 (미확인 시 불이익은 참가팀 책임)
 
-```console
-PYTHONPATH=src python3 tools/check_runtime.py \
-  --image ghcr.io/leelang7/routerx@sha256:<다이제스트> \
-  --report build/runtime-check-report.json
-```
+1. 출품작 제출 상태가 **'제출 완료'** 로 바뀌었는가
+2. **'출품작 제출 완료 안내' 메일**을 받았는가
 
-## 5. 기술 정보 파일 커밋
+둘 다 확인되어야 정상 제출이다.
 
-저장소 루트에 `submission-ossp-skt.json`을 만든다. 여섯 필드만 허용한다.
+## 6. 유의사항
 
-```json
-{
-  "schema_version": 1,
-  "challenge_id": "ossp-2026-llm-router-challenge",
-  "repository_url": "https://github.com/leelang7/ossp-2026-llm-router-challenge",
-  "commit_sha": "<2단계에서 얻은 40자리>",
-  "image_digest": "ghcr.io/leelang7/routerx@sha256:<64자리>",
-  "primary_license": "Apache-2.0"
-}
-```
+- 결과보고서·소스코드·시연영상 중 **하나라도 빠지면 심사 대상에서 제외**
+- 중복 참가 불가 — 같은 사람이 팀을 달리하거나 개인·팀을 교차해 참가할 수 없음
+  (적발 시 해당자가 속한 모든 팀의 참가·수상 취소)
+- 마감 이후에는 프로젝트 및 팀 정보(팀장 변경, 팀원 추가 등) 수정 불가
 
-```console
-python3 tools/validate_technical_submission.py     # 통과해야 한다
-git add submission-ossp-skt.json
-git commit -m "chore: 기술 제출 정보 추가"
-git push origin routerx
-git rev-parse HEAD          # ← 이 커밋의 스냅샷 URL을 보고서에 적는다
-```
+## 7. 남은 일
 
-## 6. 결과보고서 제출
+1. 시연영상 유튜브 업로드 → 링크 확보
+2. `lab/fill_report.py`의 `VIDEO`에 링크 반영 → 보고서 재생성 → PDF 변환
+3. 저장소 최종 커밋 후 태그 `submission-2026` 생성·푸시
+4. `python lab/make_submission.py` 로 zip 생성
+5. 홈페이지 업로드 → '제출 완료' 상태와 안내 메일 확인
 
-- 원본(HWP/DOCX) 1부 + PDF 1부, 본문 5페이지 이내, 맑은고딕 10pt
-- 파일명: `2026 오픈소스 개발자대회 결과보고서_접수번호(팀명)`
-- 첫 쪽 작성 안내와 회색 안내 문구는 **삭제**
-- 프로젝트 등록 URL:
-  `https://github.com/leelang7/ossp-2026-llm-router-challenge/tree/<5단계 커밋 SHA>`
-- 시연영상: 유튜브 3분 이내, URL 기재
-- 붙임1 SBOM, 붙임2 AI 모델 명세 포함 (초안은 `REPORT_DRAFT.md`)
-- osscontest.kr에 업로드
-
-## 확인 목록
-
-- [ ] fork가 공개이고 제출 커밋을 권한 없이 열 수 있다
-- [ ] 이미지가 `@sha256:` 전체 다이제스트로 참조된다(태그 아님)
-- [ ] 이미지가 `linux/arm64`이고 `VOLUME` 선언이 없다
-- [ ] 공개 Train+Dev 전체로 세 등급 실행 시간과 출력 형식을 확인했다
-- [ ] `submission-ossp-skt.json`이 검증을 통과하고 최종 커밋에 있다
-- [ ] 보고서의 등록 URL이 그 JSON을 포함한 커밋을 가리킨다
-- [ ] 저장소·이미지에 포함한 파일의 라이선스 근거가 공개되어 있다
-      (`container/BASE_IMAGE_ROUTERX.md`, `REUSE.toml`)
-
-## 사용자 결정이 필요한 항목
-
-1. **팀명** — 상장에 그대로 인쇄된다. 특수문자 제외.
-2. **시연영상** — 3분 이내 촬영·업로드.
-3. **레지스트리** — ghcr.io(GitHub 계정 연동, 무료 공개) 사용 여부.
+문의: 운영사무국 02-599-7917 / contest@oss.kr
