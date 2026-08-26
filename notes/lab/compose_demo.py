@@ -25,12 +25,9 @@ DIM = (146, 156, 174)
 ACC = (86, 204, 242)
 OK = (94, 224, 160)
 FONTS = Path(r"C:\Windows\Fonts")
-# 녹화 시작 직후 몇 초는 터미널이 화면을 덮기 전이라 바탕화면이 그대로 찍힌다.
-# 그만큼을 잘라내고, 나레이션·자막 시각도 같은 폭으로 당긴다.
-TRIM = 3.2
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_narration import BLOCKS  # noqa: E402
+# 트림 폭은 자막 시각과 반드시 같아야 하므로 나레이션 쪽 값을 그대로 쓴다.
+from build_narration import BLOCKS, TRIM  # noqa: E402
 
 
 def font(name: str, size: int):
