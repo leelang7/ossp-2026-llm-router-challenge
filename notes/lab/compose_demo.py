@@ -1,10 +1,14 @@
 # SPDX-FileCopyrightText: Copyright 2026 routerx contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""시연영상 합성 — 실행 녹화 + 성우 나레이션 + 자막 + 앞뒤 표지.
+"""시연영상 합성 — 실행 녹화 + 성우 나레이션 + 자막 + 코드 위치 배지 + 앞뒤 표지.
 
-본편은 프로그램이 실제로 동작하는 화면 녹화다. 여기에 Gemini TTS로 만든
-해설 음성을 구간별로 얹고, 같은 문장을 자막으로 화면 하단에 굽는다.
+본편은 프로그램이 실제로 동작하는 화면 녹화(build/rec/cut.mp4)다. 여기에
+Gemini TTS로 만든 해설 음성을 구간별로 얹고, 같은 문장을 자막으로 굽고,
+지금 설명하는 동작이 어느 코드에서 나오는지 오른쪽 위에 배지로 띄운다.
+
+녹화 원본은 실행 대기가 길고 결과는 순식간에 지나간다. 그대로 쓰면 해설과
+화면이 어긋나므로 lab/recut.py가 구간을 잘라 붙인 cut.mp4를 본편으로 쓴다.
 """
 from __future__ import annotations
 
@@ -15,9 +19,10 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(r"d:\opensource\ossp-2026-llm-router-challenge")
-REC = ROOT / "build" / "rec" / "session.mp4"
+REC = ROOT / "build" / "rec" / "cut.mp4"
 WORK = ROOT / "build" / "demo_video"
 TTS = WORK / "tts"
+BADGE = WORK / "badge"
 W, H = 1920, 1080
 BG = (15, 17, 23)
 FG = (234, 238, 246)
@@ -25,9 +30,11 @@ DIM = (146, 156, 174)
 ACC = (86, 204, 242)
 OK = (94, 224, 160)
 FONTS = Path(r"C:\Windows\Fonts")
+# 전체 화면 터미널 아래로 작업 표시줄이 찍혔다. 개인 아이콘이 보이므로 덮는다.
+TASKBAR = 44
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-# 트림 폭은 자막 시각과 반드시 같아야 하므로 나레이션 쪽 값을 그대로 쓴다.
-from build_narration import BLOCKS, TRIM  # noqa: E402
+from build_narration import BLOCKS, REC_END  # noqa: E402
 
 
 def font(name: str, size: int):
@@ -72,6 +79,34 @@ def closing_card(path: Path):
     img.save(path)
 
 
+def badge_card(path: Path, where):
+    """해설이 가리키는 코드 위치를 담은 배지 한 장.
+
+    화면 오른쪽 위에 얹는다. 터미널 출력은 왼쪽부터 차오르므로 그 자리는
+    대체로 비어 있어, 설명과 코드를 눈으로 잇는 데 방해가 되지 않는다.
+    """
+    src, symbol, note = where
+    pad, bar = 26, 6
+    body = font("malgun.ttf", 24)
+    # Consolas에는 한글 글리프가 없어 두부 상자로 찍힌다. 한글이 섞이면 고딕으로.
+    hangul = any("가" <= ch <= "힣" for ch in symbol)
+    mono = font("malgunbd.ttf" if hangul else "consolab.ttf", 28 if hangul else 30)
+    small = font("malgun.ttf", 22)
+    probe = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+    width = max(probe.textbbox((0, 0), src, font=small)[2],
+                probe.textbbox((0, 0), symbol, font=mono)[2],
+                probe.textbbox((0, 0), note, font=body)[2]) + pad * 2 + bar
+    height = pad * 2 + 100
+    img = Image.new("RGBA", (width, height), (10, 12, 17, 232))
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 0, bar, height], fill=ACC)
+    x = bar + pad
+    d.text((x, pad - 2), src, font=small, fill=DIM)
+    d.text((x, pad + 28), symbol, font=mono, fill=FG)
+    d.text((x, pad + 72), note, font=body, fill=(190, 198, 212))
+    img.save(path)
+
+
 def duration_of(path: Path) -> float:
     out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
                           "-of", "default=nw=1:nokey=1", str(path)],
@@ -80,36 +115,56 @@ def duration_of(path: Path) -> float:
 
 
 def main() -> int:
-    rec_len = duration_of(REC) - TRIM
-    print(f"녹화 {rec_len:.1f}초 (앞 {TRIM}초 잘라냄)")
+    BADGE.mkdir(parents=True, exist_ok=True)
+    rec_len = duration_of(REC)
+    print(f"본편 {rec_len:.1f}초")
 
     # 1) 나레이션을 시각에 맞춰 배치하고 하나로 섞는다
-    inputs = ["-ss", f"{TRIM}", "-i", str(REC)]
+    inputs = ["-i", str(REC)]
     filters = []
-    count = 0
-    for index, (start, _say, _caption) in enumerate(BLOCKS):
+    slot = 0
+    for index, block in enumerate(BLOCKS):
         mp3 = TTS / f"n{index:02d}.mp3"
         if not mp3.exists():
             continue
         inputs += ["-i", str(mp3)]
-        count += 1
-        delay = int(max(0.0, start - TRIM) * 1000)
-        filters.append(f"[{count}:a]adelay={delay}|{delay}[d{count}]")
-    mix = "".join(f"[d{i + 1}]" for i in range(count))
-    filters.append(f"{mix}amix=inputs={count}:normalize=0:duration=longest[aout]")
+        slot += 1
+        delay = int(block[0] * 1000)
+        filters.append(f"[{slot}:a]adelay={delay}|{delay}[d{slot}]")
+    mix = "".join(f"[d{i + 1}]" for i in range(slot))
+    filters.append(f"{mix}amix=inputs={slot}:normalize=0:duration=longest[aout]")
 
-    # 2) 자막을 화면 하단에 굽는다.
+    # 2) 코드 위치 배지 — 해당 해설이 흐르는 동안만 오른쪽 위에 띄운다
+    stage = "[0:v]"
+    marks = [b[0] for b in BLOCKS]
+    for index, block in enumerate(BLOCKS):
+        where = block[3] if len(block) > 3 else None
+        mp3 = TTS / f"n{index:02d}.mp3"
+        if not where or not mp3.exists():
+            continue
+        png = BADGE / f"b{index:02d}.png"
+        badge_card(png, where)
+        begin = block[0]
+        # 해설이 끝나고 잠시 더 남겨 두되, 다음 해설을 침범하지는 않는다
+        nxt = marks[index + 1] if index + 1 < len(marks) else REC_END
+        end = min(begin + duration_of(mp3) + 1.6, nxt - 0.2, rec_len)
+        inputs += ["-i", str(png)]
+        slot += 1
+        out = f"[v{index}]"
+        filters.append(f"{stage}[{slot}:v]overlay=W-w-46:52"
+                       f":enable='between(t,{begin:.2f},{end:.2f})'{out}")
+        stage = out
+
+    # 3) 작업 표시줄을 덮고 그 위에 자막을 굽는다.
     #    Windows 경로는 subtitles 필터에서 이스케이프가 까다로우므로
     #    작업 디렉터리를 자막 폴더로 옮기고 파일 이름만 넘긴다(아래 cwd 참고).
     #    original_size를 주지 않으면 자막이 기본 해상도 기준으로 확대되어 화면을 덮는다.
-    #    전체 화면 터미널 아래로 작업 표시줄(하단 40px)이 그대로 찍혔다.
-    #    개인 아이콘이 보이므로 배경색으로 덮고, 자막은 그 위로 올린다.
     srt = "narration.srt"
     style = ("FontName=Malgun Gothic,FontSize=15,PrimaryColour=&H00FFFFFF,"
              "OutlineColour=&HC0000000,BackColour=&HB0000000,BorderStyle=3,"
              "Outline=3,Shadow=0,MarginV=54,Alignment=2")
     filters.append(
-        f"[0:v]drawbox=x=0:y={H - 44}:w={W}:h=44:color=0x0B0B0B:t=fill,"
+        f"{stage}drawbox=x=0:y={H - TASKBAR}:w={W}:h={TASKBAR}:color=0x0B0B0B:t=fill,"
         f"subtitles='{srt}':original_size={W}x{H}:force_style='{style}'[vout]")
 
     body = WORK / "body.mp4"
@@ -122,7 +177,7 @@ def main() -> int:
                     str(body)], check=True, cwd=str(TTS))
     print(f"본편 합성 완료 {duration_of(body):.1f}초")
 
-    # 3) 앞뒤 표지 (본편과 같은 규격으로 맞춰야 이어붙일 때 깨지지 않는다)
+    # 4) 앞뒤 표지 (본편과 같은 규격으로 맞춰야 이어붙일 때 깨지지 않는다)
     parts = []
     for name, render, hold in (("title", title_card, 4.5), ("closing", closing_card, 7.5)):
         png = WORK / f"{name}.png"
@@ -137,7 +192,7 @@ def main() -> int:
                         "-pix_fmt", "yuv420p", "-r", "15", "-shortest", str(seg)], check=True)
         parts.append(seg)
 
-    # 4) 이어붙이기 — 규격이 같으므로 필터 concat으로 안전하게
+    # 5) 이어붙이기 — 규격이 같으므로 필터 concat으로 안전하게
     final = WORK / "routerx_demo.mp4"
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error",
                     "-i", str(parts[0]), "-i", str(body), "-i", str(parts[1]),
