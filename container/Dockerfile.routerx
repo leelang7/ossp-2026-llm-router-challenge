@@ -8,6 +8,10 @@ FROM python:3.11-slim-bookworm@sha256:2e32f7d302adc1c37428355c1e646897c0c53f4fd6
 
 ARG SOURCE_MANIFEST_SHA256=unbound
 LABEL io.sktelecom.ossp.source-manifest-sha256="${SOURCE_MANIFEST_SHA256}"
+# 레지스트리에서 이미지가 어느 저장소에서 왔는지 확인할 수 있게 한다.
+LABEL org.opencontainers.image.source="https://github.com/leelang7/ossp-2026-llm-router-challenge"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+LABEL org.opencontainers.image.description="프롬프트 내용만으로 후보 모델 하나를 고르는 compute-efficient LLM 라우터"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/opt/router \
