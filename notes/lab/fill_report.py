@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: Copyright 2026 routerx contributors
-# SPDX-License-Identifier: Apache-2.0
-
 """결과보고서 공식 양식(DOCX)에 원고를 채운다.
 
 양식의 표 구조를 그대로 유지하고 안내 문구만 실제 내용으로 바꾼다.
@@ -28,8 +25,7 @@ REPO = "https://github.com/leelang7/ossp-2026-llm-router-challenge"
 
 BODY = {
     1: "프롬프트 난이도 인지 기반 경량 LLM 라우터",
-    2: f"{REPO}/tree/[최종 커밋 SHA]\n"
-       "※ submission-ossp-skt.json을 포함한 커밋의 스냅샷 URL",
+    2: f"{REPO}/tree/31fe3cb1af37b72f12d20d17b6e55b1603c01f97",
     3: "[유튜브 URL — 업로드 후 기재]",
     4: "프롬프트 내용만 보고 세 후보 모델 중 하나를 골라 정해진 예산 안에서 답변 품질을 "
        "최대화하는 오픈소스 LLM 라우터. 모델을 호출하지 않고 네트워크도 쓰지 않으며, "
