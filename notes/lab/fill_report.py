@@ -8,11 +8,14 @@
 """
 from __future__ import annotations
 
+import re
 import sys
 from copy import deepcopy
 from pathlib import Path
 
 from docx import Document
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from docx.shared import Pt
 
 SRC = Path(r"D:\opensource\결과보고서양식\2026 오픈소스 개발자대회 결과보고서_접수번호(팀명)"
@@ -205,6 +208,66 @@ SBOM = [
 ]
 
 
+URL_RE = re.compile(r"https?://[^\s]+")
+
+
+def add_hyperlink(para, url: str, text: str) -> None:
+    """문단에 진짜 하이퍼링크를 넣는다.
+
+    URL을 글자로만 적어 두면 PDF에서 클릭이 되지 않는다. 게다가 셀 폭에 맞춰
+    줄이 나뉘면 복사할 때 주소가 끊긴다. 심사자가 링크를 열지 못하는 흔한
+    원인이므로, 주소가 나오는 자리는 모두 클릭 가능한 링크로 만든다.
+    """
+    rel = para.part.relate_to(
+        url,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+        is_external=True)
+    link = OxmlElement("w:hyperlink")
+    link.set(qn("r:id"), rel)
+    run = OxmlElement("w:r")
+    props = OxmlElement("w:rPr")
+    for tag, attrs in (("w:color", {"w:val": "0563C1"}),
+                       ("w:u", {"w:val": "single"}),
+                       ("w:sz", {"w:val": "20"})):
+        el = OxmlElement(tag)
+        for k, v in attrs.items():
+            el.set(qn(k), v)
+        props.append(el)
+    fonts = OxmlElement("w:rFonts")
+    for k in ("w:ascii", "w:hAnsi", "w:eastAsia"):
+        fonts.set(qn(k), "맑은 고딕")
+    props.append(fonts)
+    run.append(props)
+    node = OxmlElement("w:t")
+    node.text = text
+    node.set(qn("xml:space"), "preserve")
+    run.append(node)
+    link.append(run)
+    para._p.append(link)
+
+
+def write_line(para, line: str) -> None:
+    """한 줄을 적되 그 안의 주소는 하이퍼링크로 바꾼다."""
+    pos = 0
+    for m in URL_RE.finditer(line):
+        if m.start() > pos:
+            run = para.add_run(line[pos:m.start()])
+            run.font.size = Pt(10)
+            run.font.name = "맑은 고딕"
+        url = m.group().rstrip(").,")
+        add_hyperlink(para, url, url)
+        trailing = m.group()[len(url):]
+        if trailing:
+            run = para.add_run(trailing)
+            run.font.size = Pt(10)
+            run.font.name = "맑은 고딕"
+        pos = m.end()
+    if pos < len(line):
+        run = para.add_run(line[pos:])
+        run.font.size = Pt(10)
+        run.font.name = "맑은 고딕"
+
+
 def set_cell(cell, text: str) -> None:
     """셀 내용을 바꾸되 양식의 문단 서식을 유지한다."""
     for para in cell.paragraphs[1:]:
@@ -213,15 +276,11 @@ def set_cell(cell, text: str) -> None:
     for run in list(para.runs):
         run._element.getparent().remove(run._element)
     lines = text.split("\n")
-    run = para.add_run(lines[0])
-    run.font.size = Pt(10)
-    run.font.name = "맑은 고딕"
+    write_line(para, lines[0])
     for line in lines[1:]:
         new = cell.add_paragraph()
         new.paragraph_format.space_after = Pt(0)
-        r = new.add_run(line)
-        r.font.size = Pt(10)
-        r.font.name = "맑은 고딕"
+        write_line(new, line)
 
 
 def main() -> int:
